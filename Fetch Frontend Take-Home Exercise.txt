@@ -4,9 +4,47 @@ Your task is to build a website to help a dog-lover
 like yourself search through a database of shelter dogs,
 with the hope of finding a lucky dog a new home!
 
-
-
     Demo credentials:
 
 Email: demo@example.com
 Password: demo123
+
+Fetch Frontend Take-Home Exercise Checklist:
+Login & Authentication
+<!-- User Input Form -->
+API Call for Authentication
+Session Handling
+Logout Functionality
+Search Page: Browse Available Dogs
+Breed Filter
+Sort by Default (Breed Ascending)
+Sort Options (Asc/Desc)
+Paginated Results
+Next/Prev Buttons
+Display All Dog Info (img, name, age, zip, breed)
+Favorite & Match System
+Favorite Selection
+Match Algorithm (Send IDs to /dogs/match)
+Display Matched Dog
+Optional: Location-Based Search
+Location Data (ZIP-based)
+City/State Filter
+Map UI (Bonus)
+Frontend UI/UX Best Practices
+Component-Based Design
+Mobile-Responsive
+Dark Mode (Bonus)
+Animations (Bonus)
+Deployment & Code Hosting
+Live Site Deployment
+Git Repository Setup
+README with Setup Instructions
+Submission & Final Checks
+Test All Features
+Code Review & Clean-up
+Provide Links (Deployed Site & GitHub)
+Go Beyond Minimum Requirements
+Use a Component Library (MUI, Chakra, Tailwind)
+Implement Loading States & Error Handling
+Dark Mode & Animations
+Dog Adoption CTA

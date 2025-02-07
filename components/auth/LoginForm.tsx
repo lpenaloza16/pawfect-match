@@ -6,70 +6,43 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 
 const DEMO_CREDENTIALS = {
+  name: "Demo User",
   email: "demo@example.com",
-  password: "demo123",
 };
 
 export default function LoginForm() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
-    password: "",
   });
   const [error, setError] = useState("");
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error);
-
-      await login(data.user);
+      await login(formData.name, formData.email);
       router.push("/dashboard");
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError("Login failed. Please try again.");
     }
   };
 
   const handleDemoLogin = async () => {
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(DEMO_CREDENTIALS),
-      });
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error);
-
-      await login(data.user);
+      await login(DEMO_CREDENTIALS.name, DEMO_CREDENTIALS.email);
       router.push("/dashboard");
     } catch (err) {
-      setError(err.message || "Demo login failed");
+      setError("Demo login failed");
     }
   };
 
   return (
     <div className="max-w-md mx-auto p-6">
       <div className="mb-4 p-4 bg-purple-50 rounded">
+        <p className="text-gray-900">Demo Name: {DEMO_CREDENTIALS.name}</p>
         <p className="text-gray-900">Demo Email: {DEMO_CREDENTIALS.email}</p>
-        <p className="text-gray-900">
-          Demo Password: {DEMO_CREDENTIALS.password}
-        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,23 +50,29 @@ export default function LoginForm() {
 
         <div>
           <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
+            type="text"
+            name="name"
+            placeholder="Your Name"
+            value={formData.name}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }
             className="w-full p-2 border rounded text-gray-900 placeholder-gray-500"
+            required
           />
         </div>
 
         <div>
           <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, email: e.target.value }))
+            }
             className="w-full p-2 border rounded text-gray-900 placeholder-gray-500"
+            required
           />
         </div>
 
