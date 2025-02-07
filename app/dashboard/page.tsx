@@ -1,38 +1,52 @@
-// app/dashboard/page.tsx (Complete version)
-import PetCard from "@/components/dashboard/PetCard";
-import FilterPanel from "@/components/search/FilterPanel";
+import PetCard from "./PetCard";
 
-export default function DashboardPage() {
+// app/dashboard/page.tsx
+// Sample pet data without images
+const samplePets = [
+  {
+    id: "1",
+    name: "Max",
+    breed: "Golden Retriever",
+    age: "2 years",
+    distance: "2.5 miles",
+  },
+  {
+    id: "2",
+    name: "Luna",
+    breed: "Labrador",
+    age: "1 year",
+    distance: "3 miles",
+  },
+];
+
+async function getDogImage() {
+  const res = await fetch("https://dog.ceo/api/breeds/image/random", {
+    next: { revalidate: 0 }, // Disable cache
+  });
+  const data = await res.json();
+  console.log("[SERVER] Dog API Response:", data);
+  return data.message;
+}
+
+export default async function DashboardPage() {
+  // Get dog images for each pet
+  const petsWithImages = await Promise.all(
+    samplePets.map(async (pet) => ({
+      ...pet,
+      imageUrl: await getDogImage(),
+    }))
+  );
+
+  console.log("[SERVER] Pets with images:", petsWithImages);
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white shadow-sm rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900">Available Pets</h1>
-        <p className="mt-2 text-gray-600">
-          Find your perfect companion from our available pets.
-        </p>
-      </div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-6">Available Pets</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Filters Sidebar */}
-        <div className="md:col-span-1">
-          <FilterPanel />
-        </div>
-
-        {/* Pet Grid */}
-        <div className="md:col-span-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Sample pets - Replace with actual data */}
-            <PetCard
-              id="1"
-              name="Max"
-              breed="Golden Retriever"
-              age="2 years"
-              imageUrl="/pets/dog1.jpg"
-              distance="2.5 miles"
-            />
-            {/* Add more PetCards */}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {petsWithImages.map((pet) => (
+          <PetCard key={pet.id} {...pet} />
+        ))}
       </div>
     </div>
   );
