@@ -15,19 +15,21 @@ export default function Pagination({
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-4 py-2 rounded bg-purple-100 text-purple-700 disabled:opacity-50"
+        className="px-4 py-2 rounded bg-purple-600 text-white 
+                 disabled:opacity-50 hover:bg-purple-700 transition-colors"
       >
         Previous
       </button>
 
-      <span className="text-gray-600">
+      <span className="text-gray-900">
         Page {currentPage} of {totalPages}
       </span>
 
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-4 py-2 rounded bg-purple-100 text-purple-700 disabled:opacity-50"
+        className="px-4 py-2 rounded bg-purple-600 text-white 
+                 disabled:opacity-50 hover:bg-purple-700 transition-colors"
       >
         Next
       </button>

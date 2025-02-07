@@ -1,5 +1,6 @@
 // store/dogsStore.ts
 import { create } from "zustand";
+import { api } from "@/lib/api";
 
 interface Dog {
   id: string;
@@ -10,83 +11,84 @@ interface Dog {
   breed: string;
 }
 
-interface DogsState {
+interface SearchFilters {
+  breeds: string[];
+  zipCodes: string[];
+  ageMin?: number;
+  ageMax?: number;
+  sort: string;
+  size: number;
+}
+
+type DogsState = {
+  // Data
   dogs: Dog[];
   favorites: Set<string>;
   breeds: string[];
+  matchedDog: Dog | null;
+
+  // UI State
   currentPage: number;
   totalPages: number;
-  sortOrder: "asc" | "desc";
-  selectedBreeds: string[];
   isLoading: boolean;
   error: string | null;
+
+  // Search Filters
+  filters: SearchFilters;
 
   // Actions
   fetchDogs: (page?: number) => Promise<void>;
   fetchBreeds: () => Promise<void>;
   toggleFavorite: (dogId: string) => void;
-  setSortOrder: (order: "asc" | "desc") => void;
-  setSelectedBreeds: (breeds: string[]) => void;
-  generateMatch: () => Promise<string | null>;
-}
+  updateFilters: (newFilters: Partial<SearchFilters>) => void;
+  generateMatch: () => Promise<void>;
+  resetFilters: () => void;
+  clearMatch: () => void;
+};
 
-export const useDogsStore = create<DogsState>((set, get) => ({
+const DEFAULT_FILTERS: SearchFilters = {
+  breeds: [],
+  zipCodes: [],
+  ageMin: undefined,
+  ageMax: undefined,
+  sort: "breed:asc",
+  size: 20,
+};
+
+export const useDogsStore = create<DogsState>()((set, get) => ({
+  // Initial State
   dogs: [],
   favorites: new Set(),
   breeds: [],
+  matchedDog: null,
   currentPage: 1,
   totalPages: 1,
-  sortOrder: "asc",
-  selectedBreeds: [],
   isLoading: false,
   error: null,
+  filters: DEFAULT_FILTERS,
 
+  // Actions
   fetchDogs: async (page = 1) => {
     set({ isLoading: true, error: null });
     try {
-      const searchParams = new URLSearchParams({
-        size: "20",
-        from: ((page - 1) * 20).toString(),
-        sort: `breed:${get().sortOrder}`,
+      const { filters } = get();
+      const searchResult = await api.dogs.search({
+        ...filters,
+        from: (page - 1) * filters.size,
       });
 
-      if (get().selectedBreeds.length > 0) {
-        get().selectedBreeds.forEach((breed) =>
-          searchParams.append("breeds", breed)
-        );
-      }
-
-      const response = await fetch(
-        `https://frontend-take-home-service.fetch.com/dogs/search?${searchParams}`,
-        { credentials: "include" }
-      );
-
-      if (!response.ok) throw new Error("Failed to fetch dogs");
-
-      const searchResult = await response.json();
-
       // Fetch actual dog details
-      const dogsResponse = await fetch(
-        "https://frontend-take-home-service.fetch.com/dogs",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(searchResult.resultIds),
-        }
-      );
-
-      if (!dogsResponse.ok) throw new Error("Failed to fetch dog details");
-
-      const dogs = await dogsResponse.json();
+      const dogs = await api.dogs.getById(searchResult.resultIds);
 
       set({
         dogs,
         currentPage: page,
-        totalPages: Math.ceil(searchResult.total / 20),
+        totalPages: Math.ceil(searchResult.total / filters.size),
       });
     } catch (error) {
-      set({ error: error.message });
+      set({
+        error: error instanceof Error ? error.message : "Failed to fetch dogs",
+      });
     } finally {
       set({ isLoading: false });
     }
@@ -94,17 +96,13 @@ export const useDogsStore = create<DogsState>((set, get) => ({
 
   fetchBreeds: async () => {
     try {
-      const response = await fetch(
-        "https://frontend-take-home-service.fetch.com/dogs/breeds",
-        { credentials: "include" }
-      );
-
-      if (!response.ok) throw new Error("Failed to fetch breeds");
-
-      const breeds = await response.json();
+      const breeds = await api.dogs.getBreeds();
       set({ breeds });
     } catch (error) {
-      set({ error: error.message });
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to fetch breeds",
+      });
     }
   },
 
@@ -120,38 +118,42 @@ export const useDogsStore = create<DogsState>((set, get) => ({
     });
   },
 
-  setSortOrder: (order: "asc" | "desc") => {
-    set({ sortOrder: order });
-    get().fetchDogs(1);
-  },
-
-  setSelectedBreeds: (breeds: string[]) => {
-    set({ selectedBreeds: breeds });
-    get().fetchDogs(1);
+  updateFilters: (newFilters: Partial<SearchFilters>) => {
+    set((state) => ({
+      filters: { ...state.filters, ...newFilters },
+    }));
+    get().fetchDogs(1); // Reset to first page when filters change
   },
 
   generateMatch: async () => {
+    set({ isLoading: true, error: null });
     try {
       const favoriteIds = Array.from(get().favorites);
-      if (favoriteIds.length === 0) return null;
+      if (favoriteIds.length === 0) {
+        throw new Error("No favorites selected");
+      }
 
-      const response = await fetch(
-        "https://frontend-take-home-service.fetch.com/dogs/match",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(favoriteIds),
-        }
-      );
+      const { match } = await api.dogs.generateMatch(favoriteIds);
 
-      if (!response.ok) throw new Error("Failed to generate match");
-
-      const { match } = await response.json();
-      return match;
+      // Fetch the matched dog's details
+      const [matchedDog] = await api.dogs.getById([match]);
+      set({ matchedDog });
     } catch (error) {
-      set({ error: error.message });
-      return null;
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to generate match",
+      });
+    } finally {
+      set({ isLoading: false });
     }
+  },
+
+  resetFilters: () => {
+    set({ filters: DEFAULT_FILTERS });
+    get().fetchDogs(1);
+  },
+
+  clearMatch: () => {
+    set({ matchedDog: null });
   },
 }));

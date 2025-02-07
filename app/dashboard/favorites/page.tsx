@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import PetCard from "./PetCard";
+import PetCard from "../PetCard";
 
 export default function FavoritesList() {
   const [favorites, setFavorites] = useState([]);

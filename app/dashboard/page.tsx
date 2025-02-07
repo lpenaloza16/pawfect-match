@@ -3,74 +3,81 @@
 
 import { useEffect } from "react";
 import { useDogsStore } from "@/store/dogsStore";
+import FilterPanel from "@/components/search/FilterPanel";
 import PetCard from "@/components/dashboard/PetCard";
-import BreedFilter from "@/components/dashboard/BreedFilter";
-import Pagination from "@/components/dashboard/Pagination";
-import SortControl from "@/components/dashboard/SortControl";
 import FavoritesBar from "@/components/dashboard/FavoritesBar";
+import Pagination from "@/components/dashboard/Pagination";
 
 export default function DashboardPage() {
   const {
     dogs,
     fetchDogs,
-    fetchBreeds,
-    isLoading,
-    error,
+    fetchBreeds, // Add this
     currentPage,
     totalPages,
+    isLoading,
+    error,
   } = useDogsStore();
 
   useEffect(() => {
+    // Fetch breeds when component mounts
     fetchBreeds();
     fetchDogs();
-  }, []);
-
-  if (error) {
-    return <div className="text-red-500 p-4">{error}</div>;
-  }
+  }, []); // Empty dependency array means this runs once on mount
 
   return (
-    <div className="p-6 bg-gray-50">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Find Your Perfect Dog
-        </h1>
-        <FavoritesBar />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <BreedFilter />
-          <SortControl />
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Find Your Perfect Dog
+          </h1>
         </div>
 
-        <div className="md:col-span-3">
-          {isLoading ? (
-            <div className="text-gray-600">Loading...</div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {dogs.map((dog) => (
-                  <PetCard
-                    key={dog.id}
-                    id={dog.id}
-                    name={dog.name}
-                    breed={dog.breed}
-                    age={`${dog.age} years`}
-                    imageUrl={dog.img}
-                    distance={`ZIP: ${dog.zip_code}`}
-                  />
-                ))}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Filters */}
+          <div className="md:col-span-1">
+            <FilterPanel />
+          </div>
+
+          {/* Dogs Grid */}
+          <div className="md:col-span-3">
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" />
               </div>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={fetchDogs}
-              />
-            </>
-          )}
+            ) : error ? (
+              <div className="bg-red-50 text-red-600 p-4 rounded-lg">
+                {error}
+              </div>
+            ) : dogs.length === 0 ? (
+              <div className="bg-yellow-50 text-yellow-600 p-4 rounded-lg">
+                No dogs found matching your criteria.
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {dogs.map((dog) => (
+                    <PetCard key={dog.id} {...dog} />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="mt-6">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={fetchDogs}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
+
+      <FavoritesBar />
     </div>
   );
 }
