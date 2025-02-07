@@ -1,0 +1,41 @@
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// utils/auth.ts
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
+
+const prisma = new PrismaClient();
+
+export async function validateUser(email: string, password: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return false;
+  
+  return await bcrypt.compare(password, user.password);
+}
+
+export async function generateToken(email: string): Promise<string> {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+
+  return jwt.sign(
+    { email },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
+
+export async function verifyToken(token: string) {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+
+  return jwt.verify(token, process.env.JWT_SECRET);
+}
