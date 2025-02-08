@@ -2,10 +2,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
-  const authToken = request.cookies.get("auth-token");
-
-  if (!authToken) {
+export function middleware(request: NextRequest) {
+  // Only keep the root redirect if needed
+  if (request.nextUrl.pathname === "/") {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -13,5 +12,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/api/auth/:path*",
+  matcher: ["/"], // Only match the root path
 };

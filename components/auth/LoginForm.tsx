@@ -3,94 +3,101 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
-
-const DEMO_CREDENTIALS = {
-  name: "Demo User",
-  email: "demo@example.com",
-};
 
 export default function LoginForm() {
   const router = useRouter();
-  const login = useAuthStore((state) => state.login);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await login(formData.name, formData.email);
-      router.push("/dashboard");
-    } catch (err) {
-      setError("Login failed. Please try again.");
-    }
-  };
+    setIsLoading(true);
+    setError("");
 
-  const handleDemoLogin = async () => {
     try {
-      await login(DEMO_CREDENTIALS.name, DEMO_CREDENTIALS.email);
+      const response = await fetch(
+        "https://frontend-take-home-service.fetch.com/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(formData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Login failed");
+      }
+
       router.push("/dashboard");
-    } catch (err) {
-      setError("Demo login failed");
+    } catch (error) {
+      setError("Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6">
-      <div className="mb-4 p-4 bg-purple-50 rounded">
-        <p className="text-gray-900">Demo Name: {DEMO_CREDENTIALS.name}</p>
-        <p className="text-gray-900">Demo Email: {DEMO_CREDENTIALS.email}</p>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label
+          htmlFor="name"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Name
+        </label>
+        <input
+          id="name"
+          type="text"
+          required
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2
+                   shadow-sm focus:border-purple-500 focus:outline-none 
+                   focus:ring-purple-500"
+          placeholder="Enter your name"
+        />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="text-red-500">{error}</div>}
-
-        <div>
-          <input
-            type="text"
-            name="name"
-            placeholder="Your Name"
-            value={formData.name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, name: e.target.value }))
-            }
-            className="w-full p-2 border rounded text-gray-900 placeholder-gray-500"
-            required
-          />
-        </div>
-
-        <div>
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, email: e.target.value }))
-            }
-            className="w-full p-2 border rounded text-gray-900 placeholder-gray-500"
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full p-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+      <div>
+        <label
+          htmlFor="email"
+          className="block text-sm font-medium text-gray-700"
         >
-          Login
-        </button>
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          required
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2
+                   shadow-sm focus:border-purple-500 focus:outline-none 
+                   focus:ring-purple-500"
+          placeholder="Enter your email"
+        />
+      </div>
 
-        <button
-          type="button"
-          onClick={handleDemoLogin}
-          className="w-full p-2 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-        >
-          Try Demo
-        </button>
-      </form>
-    </div>
+      {error && <div className="text-sm text-red-600">{error}</div>}
+
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full flex justify-center py-2 px-4 border border-transparent 
+                 rounded-md shadow-sm text-sm font-medium text-white 
+                 bg-purple-600 hover:bg-purple-700 focus:outline-none 
+                 focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 
+                 disabled:opacity-50"
+      >
+        {isLoading ? "Signing in..." : "Sign in"}
+      </button>
+    </form>
   );
 }

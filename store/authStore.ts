@@ -20,15 +20,20 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
+
       login: async (name: string, email: string) => {
         try {
           await api.auth.login(name, email);
-          set({ user: { name, email }, isAuthenticated: true });
+          set({
+            user: { name, email },
+            isAuthenticated: true,
+          });
         } catch (error) {
           console.error("Login error:", error);
           throw error;
         }
       },
+
       logout: async () => {
         try {
           await api.auth.logout();

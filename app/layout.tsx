@@ -1,8 +1,9 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Header from "@/components/layout/Header";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/dashboard/Header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,8 +29,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Header />
+      <body
+        className={`${inter.className} ${geistSans.variable} ${geistMono.variable}`}
+      >
+        {/* Only show header on non-login pages */}
         {children}
       </body>
     </html>

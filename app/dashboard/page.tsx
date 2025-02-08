@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useDogsStore } from "@/store/dogsStore";
 import FilterPanel from "@/components/search/FilterPanel";
 import PetCard from "@/components/dashboard/PetCard";
@@ -9,10 +10,11 @@ import FavoritesBar from "@/components/dashboard/FavoritesBar";
 import Pagination from "@/components/dashboard/Pagination";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const {
     dogs,
     fetchDogs,
-    fetchBreeds, // Add this
+    fetchBreeds,
     currentPage,
     totalPages,
     isLoading,
@@ -20,9 +22,33 @@ export default function DashboardPage() {
   } = useDogsStore();
 
   useEffect(() => {
-    // Fetch breeds when component mounts
-    fetchBreeds();
-    fetchDogs();
+    // Check authentication and fetch data
+    const initializeDashboard = async () => {
+      try {
+        // Try to fetch breeds as an auth check
+        const response = await fetch(
+          "https://frontend-take-home-service.fetch.com/dogs/breeds",
+          {
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) {
+          // If not authenticated, redirect to login
+          router.push("/login");
+          return;
+        }
+
+        // If authenticated, fetch data
+        await fetchBreeds();
+        await fetchDogs();
+      } catch (error) {
+        console.error("Dashboard initialization error:", error);
+        router.push("/login");
+      }
+    };
+
+    initializeDashboard();
   }, []); // Empty dependency array means this runs once on mount
 
   return (

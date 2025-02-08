@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { api } from "@/lib/api";
 
+// Core interfaces
 interface Dog {
   id: string;
   img: string;
@@ -16,7 +17,7 @@ interface SearchFilters {
   zipCodes: string[];
   ageMin?: number;
   ageMax?: number;
-  sort: string;
+  sort: "breed:asc" | "breed:desc";
   size: number;
 }
 
@@ -77,9 +78,7 @@ export const useDogsStore = create<DogsState>()((set, get) => ({
         from: (page - 1) * filters.size,
       });
 
-      // Fetch actual dog details
       const dogs = await api.dogs.getById(searchResult.resultIds);
-
       set({
         dogs,
         currentPage: page,
@@ -132,10 +131,7 @@ export const useDogsStore = create<DogsState>()((set, get) => ({
       if (favoriteIds.length === 0) {
         throw new Error("No favorites selected");
       }
-
       const { match } = await api.dogs.generateMatch(favoriteIds);
-
-      // Fetch the matched dog's details
       const [matchedDog] = await api.dogs.getById([match]);
       set({ matchedDog });
     } catch (error) {

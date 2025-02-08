@@ -13,16 +13,19 @@ const LoginPage = () => {
             Find your perfect furry companion. Join thousands of happy pet
             owners who found their match.
           </p>
-          <Image
-            src="/dog-illustration.svg" // Add your illustration
-            alt="Dog illustration"
-            width={300}
-            height={300}
-            className="mt-8"
-          />
+          <div className="relative w-[300px] h-[300px]">
+            {" "}
+            {/* Added container with fixed dimensions */}
+            <Image
+              src="/dog-illustration.svg"
+              alt="Dog illustration"
+              fill
+              className="mt-8 object-contain"
+              priority
+            />
+          </div>
         </div>
       </div>
-
       {/* Right Panel - White Background */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
