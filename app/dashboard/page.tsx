@@ -1,7 +1,7 @@
 // app/dashboard/page.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useDogsStore } from "@/store/dogsStore";
 import FilterPanel from "@/components/search/FilterPanel";
@@ -21,35 +21,33 @@ export default function DashboardPage() {
     error,
   } = useDogsStore();
 
-  useEffect(() => {
-    // Check authentication and fetch data
-    const initializeDashboard = async () => {
-      try {
-        // Try to fetch breeds as an auth check
-        const response = await fetch(
-          "https://frontend-take-home-service.fetch.com/dogs/breeds",
-          {
-            credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          // If not authenticated, redirect to login
-          router.push("/login");
-          return;
+  // Wrap the initialization logic in useCallback
+  const initializeDashboard = useCallback(async () => {
+    try {
+      // Try to fetch breeds as an auth check
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/dogs/breeds`,
+        {
+          credentials: "include",
         }
+      );
 
-        // If authenticated, fetch data
-        await fetchBreeds();
-        await fetchDogs();
-      } catch (error) {
-        console.error("Dashboard initialization error:", error);
+      if (!response.ok) {
         router.push("/login");
+        return;
       }
-    };
 
+      // If authenticated, fetch data
+      await Promise.all([fetchBreeds(), fetchDogs()]);
+    } catch (error) {
+      console.error("Dashboard initialization error:", error);
+      router.push("/login");
+    }
+  }, [router, fetchBreeds, fetchDogs]);
+
+  useEffect(() => {
     initializeDashboard();
-  }, []); // Empty dependency array means this runs once on mount
+  }, [initializeDashboard]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -59,13 +57,11 @@ export default function DashboardPage() {
             Find Your Perfect Dog
           </h1>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Filters */}
           <div className="md:col-span-1">
             <FilterPanel />
           </div>
-
           {/* Dogs Grid */}
           <div className="md:col-span-3">
             {isLoading ? (
@@ -84,10 +80,17 @@ export default function DashboardPage() {
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {dogs.map((dog) => (
-                    <PetCard key={dog.id} {...dog} />
+                    <PetCard
+                      key={dog.id}
+                      id={dog.id}
+                      name={dog.name}
+                      breed={dog.breed}
+                      age={dog.age}
+                      img={dog.img}
+                      zip_code={dog.zip_code}
+                    />
                   ))}
                 </div>
-
                 {totalPages > 1 && (
                   <div className="mt-6">
                     <Pagination
@@ -102,7 +105,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
       <FavoritesBar />
     </div>
   );
